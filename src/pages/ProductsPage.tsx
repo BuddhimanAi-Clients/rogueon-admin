@@ -1,0 +1,31 @@
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowRight, Boxes, Plus, Search, Upload, X } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
+import { apiRequest } from '../lib/api'
+import type { Category, Paginated, Product } from '../types/admin'
+
+const emptyProduct = { categoryId: '', name: '', slug: '', description: '', status: 'draft' as Product['status'] }
+
+export function ProductsPage() {
+  const [params, setParams] = useSearchParams()
+  const [search, setSearch] = useState(params.get('search') ?? '')
+  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState(emptyProduct)
+  const [images, setImages] = useState<File[]>([])
+  const client = useQueryClient()
+  const products = useQuery({ queryKey: ['admin-products', params.toString()], queryFn: () => apiRequest<Paginated<Product>>(`/api/v1/admin/products?${new URLSearchParams({ page: '1', limit: '20', ...Object.fromEntries(params) })}`) })
+  const categories = useQuery({ queryKey: ['admin-categories'], queryFn: async () => (await apiRequest<{ data: Category[] }>('/api/v1/admin/categories')).data })
+  const create = useMutation({
+    mutationFn: async () => {
+      const product = await apiRequest<{ data: Product }>('/api/v1/admin/products', { method: 'POST', body: JSON.stringify({ ...form, images: [] }) })
+      if (images.length) { const body = new FormData(); images.forEach((image) => body.append('images', image)); await apiRequest(`/api/v1/admin/products/${product.data.id}/images`, { method: 'POST', body }) }
+      return product
+    },
+    onSuccess: () => { client.invalidateQueries({ queryKey: ['admin-products'] }); setCreating(false); setForm(emptyProduct); setImages([]); toast.success('Product created') },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Could not create product'),
+  })
+  function submitSearch(event: React.FormEvent) { event.preventDefault(); const next = new URLSearchParams(params); search.trim() ? next.set('search', search.trim()) : next.delete('search'); setParams(next) }
+  return <main className="admin-page"><header className="admin-page-head"><div><p>CATALOGUE CONTROL</p><h1>PRODUCTS</h1><span>Create products, manage variants, and upload controlled product images.</span></div><button className="admin-primary" onClick={() => setCreating(true)}><Plus />New product</button></header><section className="admin-toolbar"><form onSubmit={submitSearch}><Search /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name or slug"/><button>Search</button></form><select value={params.get('status') ?? ''} onChange={(event) => setParams(event.target.value ? { status: event.target.value } : {})}><option value="">All statuses</option><option value="draft">Draft</option><option value="active">Active</option><option value="archived">Archived</option></select></section>{products.isPending ? <div className="admin-loading">Loading catalogue…</div> : products.data?.data.length ? <div className="admin-data-table product-table"><div className="admin-table-head"><span>Product</span><span>Category</span><span>Status</span><span>Variants</span><span>Created</span><span /></div>{products.data.data.map((product) => <Link to={`/products/${product.id}`} key={product.id}><div className="table-product"><div>{product.images[0] ? <img src={product.images[0]} alt=""/> : <span>R</span>}</div><p><strong>{product.name}</strong><small>/{product.slug}</small></p></div><span>{product.category.name}</span><em className={`admin-status ${product.status}`}>{product.status}</em><strong>{product._count?.variants ?? 0}</strong><span>{new Date(product.createdAt).toLocaleDateString()}</span><ArrowRight /></Link>)}</div> : <div className="admin-empty"><Boxes /><h2>NO PRODUCTS FOUND</h2><p>Create the first catalogue entry or clear the current filters.</p></div>}{creating && <div className="admin-modal-backdrop"><section className="admin-modal"><header><div><p>NEW CATALOGUE ENTRY</p><h2>Create product</h2></div><button onClick={() => setCreating(false)}><X /></button></header><form onSubmit={(event) => { event.preventDefault(); create.mutate() }} className="admin-form"><label><span>Name</span><input required maxLength={180} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })}/></label><label><span>Slug</span><input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })}/></label><label><span>Category</span><select required value={form.categoryId} onChange={(event) => setForm({ ...form, categoryId: event.target.value })}><option value="">Select category</option>{categories.data?.flatMap((item) => [item, ...item.children]).map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label><label><span>Status</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as Product['status'] })}><option value="draft">Draft</option><option value="active">Active</option><option value="archived">Archived</option></select></label><label className="wide"><span>Description</span><textarea required rows={5} maxLength={20000} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })}/></label><label className="wide"><span>Product images (JPEG, PNG, WebP; up to 8 MB each)</span><input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={(event) => setImages(Array.from(event.target.files ?? []))}/>{images.length ? <small>{images.map((image) => image.name).join(', ')}</small> : <small><Upload /> You can add images later from the product detail page.</small>}</label><footer><button type="button" className="admin-secondary" onClick={() => setCreating(false)}>Cancel</button><button className="admin-primary" disabled={create.isPending}>{create.isPending ? 'Creating…' : 'Create product'}<ArrowRight /></button></footer></form></section></div>}</main>
+}

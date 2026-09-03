@@ -1,0 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, ArrowLeft, Check, CreditCard, ReceiptText, UserRound } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
+import { apiRequest } from '../lib/api'
+import type { AdminPosSale } from '../types/admin'
+
+export function PosSaleDetailPage() {
+  const { id = '' } = useParams()
+  const client = useQueryClient()
+  const sale = useQuery({ queryKey: ['admin-pos-sale', id], queryFn: async () => (await apiRequest<{ data: AdminPosSale }>(`/api/v1/admin/pos-sales/${id}`)).data })
+  const resolve = useMutation({ mutationFn: () => apiRequest(`/api/v1/admin/pos-sales/${id}/resolve-review`, { method: 'PATCH' }), onSuccess: () => { client.invalidateQueries({ queryKey: ['admin-pos-sale', id] }); client.invalidateQueries({ queryKey: ['admin-pos-sales'] }); toast.success('Review flag resolved') }, onError: (error) => toast.error(error.message) })
+  if (sale.isPending) return <div className="admin-loading">Loading sale…</div>
+  if (!sale.data) return <div className="admin-empty"><h2>SALE NOT FOUND</h2><Link to="/pos-sales">Return to POS sales</Link></div>
+  return <main className="admin-page"><Link className="admin-back" to="/pos-sales"><ArrowLeft/>POS sales</Link><header className="admin-page-head"><div><p>{new Date(sale.data.createdAt).toLocaleString()}</p><h1>{sale.data.saleNumber}</h1><span>{sale.data.clientSaleId ? `Offline client reference: ${sale.data.clientSaleId}` : 'Live counter sale'}</span></div>{sale.data.needsReview ? <button className="admin-primary" disabled={resolve.isPending} onClick={() => resolve.mutate()}><Check/>Resolve review</button> : <em className="admin-status active">review clear</em>}</header>{sale.data.needsReview && <div className="review-banner"><AlertTriangle/><div><strong>This synchronized sale needs review.</strong><span>Inspect its immutable item snapshots and totals before clearing the flag.</span></div></div>}<div className="admin-two-column pos-detail-grid"><section className="admin-panel"><header><h2>Receipt items</h2><ReceiptText/></header><div className="receipt-lines"><div><span>Item</span><span>Qty</span><span>Unit price</span><span>Total</span></div>{sale.data.items?.map((item) => <article key={item.id}><div><strong>{item.productName}</strong><small>{item.variantSku} · {item.variantSize} / {item.variantColor}</small></div><span>{item.qty}</span><span>Rs. {Number(item.price).toLocaleString()}</span><strong>Rs. {(Number(item.price) * item.qty).toLocaleString()}</strong></article>)}</div><div className="order-totals"><p><span>Subtotal</span><strong>Rs. {Number(sale.data.subtotal).toLocaleString()}</strong></p><p><span>Total</span><strong>Rs. {Number(sale.data.total).toLocaleString()}</strong></p></div></section><aside className="order-detail-side"><section className="admin-panel"><header><h2>Cashier</h2><UserRound/></header><div className="meta-stack"><strong>{sale.data.cashierName}</strong><span>{sale.data.staff.email}</span><span>{sale.data.staff.role}</span></div></section><section className="admin-panel"><header><h2>Payment</h2><CreditCard/></header><div className="meta-stack"><strong>{sale.data.paymentMethod.toUpperCase()}</strong><span>Rs. {Number(sale.data.total).toLocaleString()}</span></div></section></aside></div></main>
+}

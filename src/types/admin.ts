@@ -1,0 +1,16 @@
+export type Paginated<T> = { data: T[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
+export type UserRole = 'customer' | 'cashier' | 'admin'
+export type Staff = { id:string;name:string;email:string;emailVerified:boolean;phone:string|null;image:string|null;role:'cashier'|'admin';isActive:boolean;createdAt:string;updatedAt:string }
+export type Category = { id:string;name:string;slug:string;parentId:string|null;children:Category[] }
+export type Variant = { id:string;productId:string;sku:string;size:string;color:string;price:string;stockQty:number }
+export type ProductMedia = { id: string; publicUrl: string; sortOrder: number; isLegacy: boolean }
+export type Product = { id:string;categoryId:string;name:string;slug:string;description:string;images:string[];media?:ProductMedia[];status:'draft'|'active'|'archived';createdAt:string;category:Category;variants?:Variant[];_count?:{variants:number} }
+export type DashboardSales = { range:string;totalSales:number;webSales:number;posSales:number;orderCount:number;saleCount:number }
+export type LowStockVariant = Variant & { product:{id:string;name:string;slug:string;category:{id:string;name:string}} }
+export type InventoryLog = { id:string;variantId:string;changeQty:number;reason:'web_order'|'pos_sale'|'restock'|'adjustment'|'initial_stock';source:'website'|'pos'|'admin';referenceId:string;createdAt:string;variant:Variant & {product:{id:string;name:string;slug:string}} }
+export type UserSummary = {id:string;name:string;email:string;phone:string|null}
+export type AdminPayment = {id:string;orderId:string;method:'qr';screenshotUrl:string|null;screenshotObjectKey?:string|null;status:'awaiting_proof'|'pending_verification'|'success'|'failed';amount:string;verifiedBy:string|null;verifiedAt:string|null;paidAt:string|null;createdAt:string;updatedAt:string;verifier?:UserSummary|null}
+export type AdminOrderItem = {id:string;orderId:string;variantId:string;productName:string;productImageUrl:string|null;variantSku:string;variantSize:string;variantColor:string;qty:number;price:string;variant?:Variant & {product:{id:string;name:string;slug:string}}}
+export type AdminOrder = {id:string;orderNumber:string;userId:string|null;status:'pending'|'confirmed'|'packed'|'shipped'|'delivered'|'cancelled';subtotal:string;shippingFee:string;total:string;paymentMethod:'qr';paymentStatus:'unpaid'|'paid'|'failed';shippingAddressId:string|null;guestName:string;guestPhone:string;guestFullAddress:string;guestCity:string;trackingRef:string|null;createdAt:string;updatedAt:string;user:UserSummary|null;items?:AdminOrderItem[];payments:AdminPayment[];_count?:{items:number}}
+export type PosSaleItem = {id:string;variantId:string;productName:string;variantSku:string;variantSize:string;variantColor:string;qty:number;price:string}
+export type AdminPosSale = {id:string;saleNumber:string;staffId:string;clientSaleId:string|null;cashierName:string;subtotal:string;total:string;paymentMethod:'cash'|'qr';needsReview:boolean;createdAt:string;staff:{id:string;name:string;email:string;role:string};items?:PosSaleItem[];_count?:{items:number}}
