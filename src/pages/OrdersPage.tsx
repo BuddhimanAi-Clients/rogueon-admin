@@ -6,13 +6,51 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { apiRequest } from '../lib/api'
 import type { AdminOrder, Paginated } from '../types/admin'
 
+function paymentMode(order: AdminOrder) {
+  return order.paymentMethod === 'cod'
+    ? `COD · QR advance Rs. ${Number(order.advancePaymentAmount).toLocaleString()}`
+    : 'Full payment · QR'
+}
+
 export function OrdersPage() {
   const [params, setParams] = useSearchParams()
   const [search, setSearch] = useState(params.get('search') ?? '')
   const pending = params.get('pending') === 'true'
   const query = new URLSearchParams({ page: '1', limit: '30', ...Object.fromEntries([...params].filter(([key]) => key !== 'pending')) })
   const orders = useQuery({ queryKey: ['admin-orders', params.toString()], queryFn: () => apiRequest<Paginated<AdminOrder>>(`/api/v1/admin/orders${pending ? '/pending-payments' : ''}?${query}`) })
-  function submit(event: React.FormEvent) { event.preventDefault(); const next = new URLSearchParams(params); search.trim() ? next.set('search', search.trim()) : next.delete('search'); setParams(next) }
-  function filter(key: string, value: string) { const next = new URLSearchParams(params); value ? next.set(key, value) : next.delete(key); setParams(next) }
-  return <main className="admin-page"><header className="admin-page-head"><div><p>FULFILMENT CONTROL</p><h1>{pending ? 'PAYMENT QUEUE' : 'WEBSITE ORDERS'}</h1><span>{pending ? 'Review uploaded QR payment evidence before confirming stock.' : 'Track customer and guest orders from checkout to delivery.'}</span></div><button className={pending ? 'admin-secondary' : 'admin-primary'} onClick={() => filter('pending', pending ? '' : 'true')}><ShieldCheck/>{pending ? 'View all orders' : 'Pending payments'}</button></header><section className="admin-toolbar wrap"><form onSubmit={submit}><Search/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Order number, name or email"/><button>Search</button></form>{!pending && <><select value={params.get('status') ?? ''} onChange={(event) => filter('status', event.target.value)}><option value="">All order statuses</option>{['pending','confirmed','packed','shipped','delivered','cancelled'].map((status) => <option value={status} key={status}>{status}</option>)}</select><select value={params.get('paymentStatus') ?? ''} onChange={(event) => filter('paymentStatus', event.target.value)}><option value="">All payment statuses</option><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="failed">Failed</option></select></>}</section>{orders.isPending ? <div className="admin-loading">Loading orders…</div> : orders.data?.data.length ? <div className="admin-data-table orders-table"><div className="admin-table-head"><span>Order</span><span>Customer</span><span>Placed</span><span>Payment</span><span>Status</span><span>Total</span><span/></div>{orders.data.data.map((order) => <Link to={`/orders/${order.id}`} key={order.id}><div><strong>{order.orderNumber}</strong><small>{order._count?.items ?? 0} items</small></div><div><strong>{order.user?.name ?? order.guestName}</strong><small>{order.user?.email ?? order.guestPhone}</small></div><span>{new Date(order.createdAt).toLocaleDateString()}</span><em className={`admin-status ${order.paymentStatus}`}>{order.paymentStatus}</em><em className={`admin-status ${order.status}`}>{order.status}</em><strong>Rs. {Number(order.total).toLocaleString()}</strong><ArrowRight/></Link>)}</div> : <div className="admin-empty"><ClipboardList/><h2>{pending ? 'PAYMENT QUEUE CLEAR' : 'NO ORDERS FOUND'}</h2><p>{pending ? 'There are no payment proofs awaiting review.' : 'Try clearing the active filters.'}</p></div>}</main>
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault()
+    const next = new URLSearchParams(params)
+    search.trim() ? next.set('search', search.trim()) : next.delete('search')
+    setParams(next)
+  }
+
+  function filter(key: string, value: string) {
+    const next = new URLSearchParams(params)
+    value ? next.set(key, value) : next.delete(key)
+    setParams(next)
+  }
+
+  return <main className="admin-page">
+    <header className="admin-page-head">
+      <div><p>FULFILMENT CONTROL</p><h1>{pending ? 'PAYMENT QUEUE' : 'WEBSITE ORDERS'}</h1><span>{pending ? 'Review uploaded QR payment evidence before confirming stock.' : 'Track customer and guest orders from checkout to delivery.'}</span></div>
+      <button className={pending ? 'admin-secondary' : 'admin-primary'} onClick={() => filter('pending', pending ? '' : 'true')}><ShieldCheck/>{pending ? 'View all orders' : 'Pending payments'}</button>
+    </header>
+    <section className="admin-toolbar wrap">
+      <form onSubmit={submit}><Search/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Order number, name or email"/><button>Search</button></form>
+      {!pending && <><select value={params.get('status') ?? ''} onChange={(event) => filter('status', event.target.value)}><option value="">All order statuses</option>{['pending','confirmed','packed','shipped','delivered','cancelled'].map((status) => <option value={status} key={status}>{status}</option>)}</select><select value={params.get('paymentStatus') ?? ''} onChange={(event) => filter('paymentStatus', event.target.value)}><option value="">All payment statuses</option><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="failed">Failed</option></select></>}
+    </section>
+    {orders.isPending ? <div className="admin-loading">Loading orders…</div> : orders.data?.data.length ? <div className="admin-data-table orders-table">
+      <div className="admin-table-head"><span>Order</span><span>Customer</span><span>Placed</span><span>Payment</span><span>Status</span><span>Total</span><span/></div>
+      {orders.data.data.map((order) => <Link to={`/orders/${order.id}`} key={order.id}>
+        <div><strong>{order.orderNumber}</strong><small>{order._count?.items ?? 0} items</small></div>
+        <div><strong>{order.user?.name ?? order.guestName}</strong><small>{order.user?.email ?? order.guestPhone}</small></div>
+        <span>{new Date(order.createdAt).toLocaleDateString()}</span>
+        <div className="payment-mode-cell"><em className={`admin-status ${order.paymentStatus}`}>{order.paymentStatus}</em><small>{paymentMode(order)}</small></div>
+        <em className={`admin-status ${order.status}`}>{order.status}</em>
+        <strong>Rs. {Number(order.total).toLocaleString()}</strong><ArrowRight/>
+      </Link>)}
+    </div> : <div className="admin-empty"><ClipboardList/><h2>{pending ? 'PAYMENT QUEUE CLEAR' : 'NO ORDERS FOUND'}</h2><p>{pending ? 'There are no payment proofs awaiting review.' : 'Try clearing the active filters.'}</p></div>}
+  </main>
 }

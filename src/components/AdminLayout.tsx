@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Boxes, ChartNoAxesCombined, ChevronRight, ClipboardList, FolderTree, LogOut, Menu, PackageSearch, QrCode, ScanLine, ShieldAlert, UserCog, X } from 'lucide-react'
+import { Boxes, Cake, ChartNoAxesCombined, ChevronRight, ClipboardList, FolderTree, LogOut, Menu, PackageSearch, QrCode, ScanLine, ShieldAlert, UserCog, Users, X } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { authClient } from '../lib/auth-client'
 
-const nav=[{to:'/',label:'Operations',icon:ChartNoAxesCombined},{to:'/products',label:'Products',icon:Boxes},{to:'/categories',label:'Categories',icon:FolderTree},{to:'/stock',label:'Stock & audit',icon:PackageSearch},{to:'/orders',label:'Website orders',icon:ClipboardList},{to:'/payment-settings',label:'Payment QR',icon:QrCode},{to:'/pos-sales',label:'POS sales',icon:ScanLine},{to:'/staff',label:'Staff',icon:UserCog}]
+const nav=[{to:'/',label:'Sales',icon:ChartNoAxesCombined},{to:'/products',label:'Products',icon:Boxes},{to:'/categories',label:'Categories',icon:FolderTree},{to:'/stock',label:'Stock & audit',icon:PackageSearch},{to:'/orders',label:'Web sales & shipping',icon:ClipboardList},{to:'/payment-settings',label:'Payment QR',icon:QrCode},{to:'/pos-sales',label:'POS sales',icon:ScanLine},{to:'/customers',label:'Customers',icon:Users},{to:'/birthdays',label:'Birthdays',icon:Cake},{to:'/membership-tiers',label:'Membership tiers',icon:ShieldAlert},{to:'/staff',label:'Staff',icon:UserCog}]
 
 export function RequireAdmin(){const{data:session,isPending}=authClient.useSession();if(isPending)return <div className="admin-gate">Checking administrator access…</div>;if(!session){window.location.replace('/login');return null}const role=(session.user as{role?:string}).role;if(role!=='admin')return <div className="admin-gate"><ShieldAlert/><h1>ADMIN ACCESS REQUIRED.</h1><p>This session is authenticated but does not have the Admin role.</p><button onClick={()=>authClient.signOut().then(()=>window.location.replace('/login'))}>Use another account</button></div>;return <AdminLayout/>}
 
