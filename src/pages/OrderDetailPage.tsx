@@ -7,7 +7,7 @@ import { apiRequest } from '../lib/api'
 import type { AdminOrder } from '../types/admin'
 
 const transitions: Record<AdminOrder['status'], AdminOrder['status'][]> = { pending:['cancelled'], confirmed:['packed'], packed:['shipped'], shipped:['delivered'], delivered:[], cancelled:[] }
-const amount = (value: string | null | undefined) => 'Rs. ' + Number(value ?? 0).toLocaleString()
+const amount = (value: string | number | null | undefined) => 'Rs. ' + Number(value ?? 0).toLocaleString()
 
 export function OrderDetailPage() {
   const { id='' } = useParams(); const client = useQueryClient()
