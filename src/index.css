@@ -35,3 +35,14 @@
 
 /* Brand mark: the star takes the colour of the text beside it. */
 .brand-star{display:inline-block;flex:none;width:1.35em;height:1.35em;margin-right:.22em;vertical-align:-.32em;background:currentColor;-webkit-mask:url(/brand/star.png) center/contain no-repeat;mask:url(/brand/star.png) center/contain no-repeat}
+
+/* Phones: list rows become stacked cards instead of a table that scrolls sideways. */
+@media(max-width:760px){
+.admin-data-table{overflow:visible}
+.admin-data-table .admin-table-head{display:none}
+.admin-data-table>a,.admin-data-table>article{min-width:0;grid-template-columns:1fr 1fr!important;gap:8px 14px;padding:14px;align-items:start}
+.admin-data-table>a>:first-child,.admin-data-table>article>:first-child{grid-column:1/-1}
+.admin-data-table>a>svg:last-child{display:none}
+.admin-data-table>a>*,.admin-data-table>article>*{min-width:0;overflow-wrap:anywhere}
+.admin-page-head h1{font-size:clamp(34px,10.5vw,46px);line-height:.94;letter-spacing:-1.5px;overflow-wrap:anywhere}
+}
