@@ -32,3 +32,6 @@
 .admin-form label.category-image-pick{position:relative;display:inline-flex;flex-direction:row;align-items:center;cursor:pointer}
 .category-image-pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .admin-form label small{font-size:11px;line-height:1.45;opacity:.7}
+
+/* Brand mark: the star takes the colour of the text beside it. */
+.brand-star{display:inline-block;flex:none;width:1.35em;height:1.35em;margin-right:.22em;vertical-align:-.32em;background:currentColor;-webkit-mask:url(/brand/star.png) center/contain no-repeat;mask:url(/brand/star.png) center/contain no-repeat}
