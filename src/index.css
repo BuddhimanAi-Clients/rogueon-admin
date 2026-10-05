@@ -16,3 +16,19 @@
 .admin-form label.admin-toggle>span{display:flex;flex-direction:column;gap:4px;font-size:inherit;font-weight:inherit;text-transform:none;letter-spacing:0}
 .admin-form label.admin-toggle strong{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px}
 .admin-form label.admin-toggle small{font-size:11px;line-height:1.45;opacity:.7}
+/* Category image management */
+.category-row-main{display:flex;align-items:center;gap:10px;min-width:0}
+.category-row-main p{margin:0;min-width:0}
+.category-row-main img,.category-thumb-empty{width:36px;height:45px;flex:none;object-fit:cover;background:#ecebe7;border:1px solid rgba(11,11,13,.14)}
+.category-thumb-empty{display:grid;place-items:center;color:#a3a39f}
+.category-thumb-empty svg{width:14px}
+.category-image-field>span{display:block;margin-bottom:7px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px}
+.category-image-field>div{display:flex;gap:14px;align-items:flex-start}
+.category-image-field img,.category-image-empty{width:96px;height:120px;flex:none;object-fit:cover;background:#ecebe7;border:1px solid rgba(11,11,13,.14)}
+.category-image-empty{display:grid;place-items:center;align-content:center;gap:6px;color:#8a8a86;font-size:10px}
+.category-image-empty svg{width:18px}
+.category-image-field p{margin:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.category-image-field small{flex-basis:100%;font-size:11px;line-height:1.45;opacity:.7}
+.admin-form label.category-image-pick{position:relative;display:inline-flex;flex-direction:row;align-items:center;cursor:pointer}
+.category-image-pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.admin-form label small{font-size:11px;line-height:1.45;opacity:.7}
