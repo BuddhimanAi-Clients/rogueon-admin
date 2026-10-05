@@ -1,7 +1,7 @@
 export type Paginated<T> = { data: T[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
 export type UserRole = 'customer' | 'cashier' | 'admin'
 export type Staff = { id:string;name:string;email:string;emailVerified:boolean;phone:string|null;image:string|null;role:'cashier'|'admin';isActive:boolean;createdAt:string;updatedAt:string }
-export type Category = { id:string;name:string;slug:string;parentId:string|null;children:Category[] }
+export type Category = { id:string;name:string;slug:string;parentId:string|null;imageUrl?:string|null;children:Category[] }
 export type Variant = { id:string;productId:string;sku:string;size:string;color:string;price:string;stockQty:number }
 export type ProductMedia = { id: string; publicUrl: string; sortOrder: number; isLegacy: boolean }
 export type Product = { id:string;categoryId:string;name:string;slug:string;description:string;images:string[];media?:ProductMedia[];status:'draft'|'active'|'archived';membershipDiscountEligible?:boolean;createdAt:string;category:Category;variants?:Variant[];_count?:{variants:number} }
