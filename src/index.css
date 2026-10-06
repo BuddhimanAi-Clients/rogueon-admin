@@ -75,3 +75,87 @@
 .order-item-list article>.item-placeholder{grid-column:1}
 .order-item-list article>div{min-width:0}
 }
+
+/* Product page: colour-aware photos and guided variant entry. */
+.admin-media-grid article{aspect-ratio:auto;display:grid;grid-template-rows:auto auto}
+.admin-media-grid article img{aspect-ratio:1}
+.admin-media-grid article select{width:100%;border:0;border-top:1px solid var(--line);background:#fafaf8;padding:6px 4px;font-size:9px;font-weight:700}
+.admin-media-hint,.variant-hint{margin:0 0 10px;color:var(--muted);font-size:10px;line-height:1.5}
+.admin-media-colour{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.admin-media-colour select{flex:1;border:1px solid var(--line);background:#fafaf8;padding:9px;font-size:11px}
+.variant-create{grid-template-columns:.9fr .7fr 1.2fr .6fr .6fr auto}
+.variant-create select{min-width:0;border:1px solid var(--line);padding:9px;font-size:10px;background:#fff}
+.variant-hint{padding:8px 12px 0}
+.variant-hint strong{color:var(--ink)}
+.variant-hint button{border:0;background:none;padding:0;font:inherit;text-decoration:underline;cursor:pointer}
+.colour-rename{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:9px;font-weight:800;text-transform:uppercase}
+.colour-rename select,.colour-rename input{border:1px solid var(--line);padding:7px;font-size:10px;min-width:0;flex:1 1 110px}
+@media(max-width:760px){.variant-create{grid-template-columns:1fr 1fr}.variant-create button{grid-column:1/-1}}
+
+/* Bulk product import */
+.admin-head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.admin-page-head>a.admin-secondary{text-decoration:none;color:var(--ink)}
+.import-choose{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px}
+.import-drop{min-height:150px;padding:20px;display:grid;place-items:center;align-content:center;gap:8px;border:1px dashed #9a9b9f;background:#fafaf8;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.import-drop:hover:not(:disabled){border-color:var(--ink);background:#fff}
+.import-drop svg{width:26px;height:26px}
+.import-drop strong{font:800 18px 'Barlow Condensed',sans-serif;text-transform:uppercase}
+.import-drop small{color:var(--muted);font-size:10px;max-width:260px;line-height:1.4}
+.import-howto{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;padding:0 20px 20px}
+.import-howto h3,.import-block h3{margin:0 0 8px;font:800 14px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.4px}
+.import-howto pre{margin:0;padding:14px;background:#111217;color:#e8e8ea;font-size:10px;line-height:1.6;overflow:auto}
+.import-howto ul{margin:0;padding-left:18px;display:grid;gap:8px;color:#3f4046;font-size:11px;line-height:1.5}
+.import-status{display:flex;align-items:center;gap:8px;margin:0;padding:14px 20px;font-size:11px;font-weight:700}
+.import-status svg,.spin{width:15px;height:15px;animation:import-spin 1s linear infinite}
+@keyframes import-spin{to{transform:rotate(360deg)}}
+.import-problem{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:14px 16px;border:1px solid #e3b4ae;background:#fdf1ef;color:#7a1f15}
+.import-problem svg{width:18px;flex:none}
+.import-problem div{flex:1}
+.import-problem p{margin:4px 0 0;font-size:11px;line-height:1.5}
+.import-report{padding:20px;display:grid;gap:18px}
+.import-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.import-done .import-tiles{grid-template-columns:repeat(3,minmax(0,1fr));padding:20px}
+.import-tiles article{padding:14px;border:1px solid var(--line);background:#fff;display:grid;gap:4px}
+.import-tiles article.bad{border-color:#e3b4ae;background:#fdf1ef}
+.import-tiles span{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.import-tiles strong{font:900 34px/1 'Barlow Condensed',sans-serif}
+.import-tiles small{font-size:10px;color:var(--muted);line-height:1.4}
+.import-block{padding:14px;border:1px solid var(--line);background:#fff}
+.import-block>p{margin:0 0 10px;color:var(--muted);font-size:11px}
+.import-block.errors{border-color:#e3b4ae}
+.import-block.errors h3{color:#a3261a}
+.import-block summary{cursor:pointer;font:800 14px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.4px}
+.import-suggestion{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+.import-suggestion p{margin:0;font-size:12px}
+.import-suggestion em{font-style:normal;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--blue);margin-right:6px}
+.import-suggestion small{display:block;margin-top:3px;color:var(--muted);font-size:10px}
+.import-suggestion div{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.import-issues{list-style:none;margin:10px 0 0;padding:0;max-height:340px;overflow:auto;border-top:1px solid var(--line)}
+.import-issues li{display:grid;grid-template-columns:70px 110px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px;align-items:start}
+.import-issues b{font-weight:800}
+.import-issues span{color:var(--muted)}
+.import-issues p{margin:0;line-height:1.45}
+.import-ready{display:flex;align-items:center;gap:8px;margin:0;padding:12px 14px;border:1px solid #b9dcc0;background:#eff8f1;color:#1d5a2c;font-size:11px;font-weight:700}
+.import-ready svg{width:16px;flex:none}
+.import-actions{display:flex;justify-content:space-between;gap:10px;padding:14px 20px;border-top:1px solid var(--line)}
+.import-actions a{text-decoration:none}
+.import-progress{padding:0 20px 18px}
+.import-progress>div{height:8px;background:#e6e6e2;overflow:hidden}
+.import-progress>div span{display:block;height:100%;background:var(--blue);transition:width .3s}
+.import-progress p{margin:8px 0 2px;font-size:11px;font-weight:700}
+.import-progress small,.import-empty{color:var(--muted);font-size:10px}
+.import-empty{margin:0;padding:16px 20px}
+.import-history{list-style:none;margin:0;padding:0}
+.import-history li{display:grid;grid-template-columns:190px 160px 1fr;gap:12px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:11px}
+.import-history li:last-child{border-bottom:0}
+.import-history span{color:var(--muted)}
+@media(max-width:760px){
+.import-choose,.import-howto{grid-template-columns:1fr}
+.import-tiles,.import-done .import-tiles{grid-template-columns:1fr 1fr}
+.import-suggestion{flex-direction:column;align-items:stretch}
+.import-suggestion div{justify-content:flex-start}
+.import-issues li{grid-template-columns:60px 1fr}
+.import-issues li p{grid-column:1/-1}
+.import-history li{grid-template-columns:1fr}
+.import-actions{flex-direction:column}
+}
