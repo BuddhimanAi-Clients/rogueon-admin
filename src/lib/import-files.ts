@@ -59,12 +59,24 @@ async function readZipEntry(file: Blob, entry: ZipEntry): Promise<Blob> {
   return new Response(data.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob()
 }
 
+const IMAGE_TYPES: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }
+
+/**
+ * A file pulled out of a zip has no type, and some folder files lack one too.
+ * The server refuses an upload whose declared type does not match its
+ * contents, so photos are labelled from their extension before upload.
+ */
+export function withImageType(blob: Blob, fileName: string): Blob {
+  const type = IMAGE_TYPES[fileName.split('.').pop()?.toLowerCase() ?? '']
+  return !type || blob.type === type ? blob : new Blob([blob], { type })
+}
+
 export async function filesFromZip(zip: File): Promise<SourceFile[]> {
-  return (await readZipIndex(zip)).map((entry) => ({ path: entry.name, blob: () => readZipEntry(zip, entry) }))
+  return (await readZipIndex(zip)).map((entry) => ({ path: entry.name, blob: async () => withImageType(await readZipEntry(zip, entry), entry.name) }))
 }
 
 export function filesFromFolder(list: FileList | File[]): SourceFile[] {
-  return Array.from(list).map((file) => ({ path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name, blob: async () => file }))
+  return Array.from(list).map((file) => ({ path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name, blob: async () => withImageType(file, file.name) }))
 }
 
 function isJunk(path: string) {

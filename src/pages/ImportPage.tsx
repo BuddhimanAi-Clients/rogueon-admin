@@ -4,7 +4,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileArchive, FolderOp
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { apiRequest } from '../lib/api'
-import { filesFromFolder, filesFromZip, parseImport, type ParsedImport, type SheetRow, type SourceFile } from '../lib/import-files'
+import { filesFromFolder, filesFromZip, parseImport, withImageType, type ParsedImport, type SheetRow, type SourceFile } from '../lib/import-files'
 
 type Issue = { row: number | null; field: string; message: string }
 type Suggestion = { key: string; kind: 'category' | 'product' | 'colour'; value: string; suggestion: string; rows: number[] }
@@ -117,7 +117,7 @@ export function ImportPage() {
               for (const photo of batch) {
                 const file = parsed.files.get(photo.path)
                 if (!file) throw new Error('file missing')
-                body.append('images', await file.blob(), photo.file)
+                body.append('images', withImageType(await file.blob(), photo.file), photo.file)
               }
               if (colour) body.append('color', colour)
               body.append('skipExisting', 'true')
