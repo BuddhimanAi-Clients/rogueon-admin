@@ -50,11 +50,13 @@ export function ImportPage() {
     if (folderInput.current) folderInput.current.value = ''
   }
 
-  async function check(nextRows: SheetRow[], photos: ParsedImport['photos'], confirmed: string[]) {
+  async function check(nextRows: SheetRow[], photos: ParsedImport['photos'], confirmed: string[], fakeList: string[] = parsed?.fakePngs ?? []) {
     setBusy('checking'); setProblem(null)
     try {
       const response = await apiRequest<{ data: Plan }>('/api/v1/admin/imports/products/check', { method: 'POST', body: JSON.stringify({ rows: nextRows, photos, confirmedNew: confirmed }) })
-      setPlan(response.data)
+      // Files named .png that are not really PNG are found in the browser.
+      const renamed: Issue[] = (fakeList ?? []).map((path) => ({ row: null, field: 'Photos', message: `"${path}" is named .png but is not a real PNG (it was probably renamed). Open it and save or export it as PNG.` }))
+      setPlan({ ...response.data, errors: [...renamed, ...response.data.errors] })
     } catch (error) {
       setPlan(null); setProblem(error instanceof Error ? error.message : 'The file could not be checked.')
     } finally { setBusy(null) }
@@ -66,7 +68,7 @@ export function ImportPage() {
       const next = await parseImport(await source)
       if (next.rows.length === 0) throw new Error('The Excel file has column titles but no product rows.')
       setParsed(next); setRows(next.rows)
-      await check(next.rows, next.photos, [])
+      await check(next.rows, next.photos, [], next.fakePngs)
     } catch (error) {
       setBusy(null); setProblem(error instanceof Error ? error.message : 'The files could not be read.')
     }
@@ -182,14 +184,15 @@ export function ImportPage() {
   products.xlsx
   photos/
     Project Requiem Zipup/
-      1.jpg  2.jpg          general photos
-      Grey/1.jpg  2.jpg     photos of the grey one
-      Black/1.jpg  2.jpg`}</pre>
+      1.png  2.png          general photos
+      Grey/1.png  2.png     photos of the grey one
+      Black/1.png  2.png`}</pre>
             </div>
             <ul>
               <li>One Excel row per size and colour. Rows with the same product name become one product.</li>
               <li>Categories are created if they do not exist yet. Web addresses and SKUs are created for you.</li>
               <li>Photo folders are named after the product; a sub-folder is named after the colour. Number the files in the order they should show.</li>
+              <li><b>Photos must be PNG.</b> JPEG and other formats are refused; save or export them as PNG first.</li>
               <li>Importing the same products twice is safe, whether by zip, by folder, or one after the other. Products, sizes and photos that are already in the store are recognised and skipped, and stock is never changed.</li>
             </ul>
           </div>
@@ -232,8 +235,8 @@ export function ImportPage() {
 
               {plan.errors.length > 0 && (
                 <div className="import-block errors">
-                  <h3>Must be fixed in the Excel file ({plan.errors.length})</h3>
-                  <p>Correct these rows, save the file, and choose it again.</p>
+                  <h3>Must be fixed before importing ({plan.errors.length})</h3>
+                  <p>Correct these in the Excel file or the photos folder, then choose the files again.</p>
                   <ul className="import-issues">{plan.errors.slice(0, 200).map((issue, index) => <li key={index}><b>{issue.row ? `Row ${issue.row}` : 'File'}</b><span>{issue.field}</span><p>{issue.message}</p></li>)}</ul>
                 </div>
               )}
