@@ -2,7 +2,7 @@
 // browser: the spreadsheet is parsed here and photos are uploaded one product
 // at a time, so even a large import never travels as one huge request.
 
-export type SourceFile = { path: string; blob: () => Promise<Blob> }
+export type SourceFile = { path: string; blob: () => Promise<Blob>; head: () => Promise<Uint8Array> }
 
 export type SheetRow = {
   row: number
@@ -10,7 +10,7 @@ export type SheetRow = {
   colour?: string; size?: string; price?: string; stock?: string; status?: string; memberDiscount?: string; sku?: string
 }
 export type PhotoRef = { path: string; product: string; colour: string | null; file: string }
-export type ParsedImport = { sheetName: string; rows: SheetRow[]; photos: PhotoRef[]; files: Map<string, SourceFile>; notes: string[] }
+export type ParsedImport = { sheetName: string; rows: SheetRow[]; photos: PhotoRef[]; files: Map<string, SourceFile>; notes: string[]; fakePngs: string[] }
 
 type ZipEntry = { name: string; method: number; compressedSize: number; offset: number }
 
@@ -59,6 +59,7 @@ async function readZipEntry(file: Blob, entry: ZipEntry): Promise<Blob> {
   return new Response(data.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob()
 }
 
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 const IMAGE_TYPES: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }
 
 /**
@@ -71,12 +72,34 @@ export function withImageType(blob: Blob, fileName: string): Blob {
   return !type || blob.type === type ? blob : new Blob([blob], { type })
 }
 
+/** First bytes of a zip entry, without unpacking the whole file. */
+async function readZipEntryHead(file: Blob, entry: ZipEntry): Promise<Uint8Array> {
+  const header = view(await file.slice(entry.offset, entry.offset + 30).arrayBuffer())
+  const dataStart = entry.offset + 30 + header.getUint16(26, true) + header.getUint16(28, true)
+  const data = file.slice(dataStart, dataStart + Math.min(entry.compressedSize, 4096))
+  if (entry.method === 0) return new Uint8Array(await data.slice(0, 16).arrayBuffer())
+  if (entry.method !== 8 || typeof DecompressionStream === 'undefined') return new Uint8Array()
+  const reader = data.stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader()
+  try {
+    const { value } = await reader.read()
+    return value ? value.slice(0, 16) : new Uint8Array()
+  } catch {
+    return new Uint8Array()
+  } finally {
+    void reader.cancel().catch(() => undefined)
+  }
+}
+
 export async function filesFromZip(zip: File): Promise<SourceFile[]> {
-  return (await readZipIndex(zip)).map((entry) => ({ path: entry.name, blob: async () => withImageType(await readZipEntry(zip, entry), entry.name) }))
+  return (await readZipIndex(zip)).map((entry) => ({
+    path: entry.name,
+    blob: async () => withImageType(await readZipEntry(zip, entry), entry.name),
+    head: () => readZipEntryHead(zip, entry),
+  }))
 }
 
 export function filesFromFolder(list: FileList | File[]): SourceFile[] {
-  return Array.from(list).map((file) => ({ path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name, blob: async () => withImageType(file, file.name) }))
+  return Array.from(list).map((file) => ({ path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name, blob: async () => withImageType(file, file.name), head: async () => new Uint8Array(await file.slice(0, 16).arrayBuffer()) }))
 }
 
 function isJunk(path: string) {
@@ -171,7 +194,17 @@ export async function parseImport(source: SourceFile[]): Promise<ParsedImport> {
     files.set(file.path, file)
   }
   if (photos.length === 0) notes.push('No "photos" folder was found, so products will be created without photos.')
-  // Numbered files upload in order: 1.jpg, 2.jpg, 10.jpg.
+  // A JPEG renamed to .png is still a JPEG. The first bytes of a real PNG are
+  // always the same, so renamed files are caught here, before anything is sent.
+  const fakePngs: string[] = []
+  const pngPhotos = photos.filter((photo) => /\.png$/i.test(photo.file))
+  for (let start = 0; start < pngPhotos.length; start += 8) {
+    await Promise.all(pngPhotos.slice(start, start + 8).map(async (photo) => {
+      const head = await files.get(photo.path)!.head().catch(() => new Uint8Array())
+      if (head.length >= 8 && !PNG_SIGNATURE.every((byte, index) => head[index] === byte)) fakePngs.push(photo.path)
+    }))
+  }
+  // Numbered files upload in order: 1.png, 2.png, 10.png.
   photos.sort((left, right) => left.path.localeCompare(right.path, undefined, { numeric: true, sensitivity: 'base' }))
-  return { sheetName: sheet.path.split('/').pop() ?? sheet.path, rows, photos, files, notes }
+  return { sheetName: sheet.path.split('/').pop() ?? sheet.path, rows, photos, files, notes, fakePngs }
 }
