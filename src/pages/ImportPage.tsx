@@ -161,13 +161,15 @@ export function ImportPage() {
 
       {!parsed && !result && (
         <section className="admin-panel import-start">
-          <header><h2>1 · Choose your files</h2></header>
+          <header><h2>1 · Choose your files</h2><span>Pick one way. Both do exactly the same thing.</span></header>
+          <p className="import-lead">Your files are the Excel sheet plus a <b>photos</b> folder. Hand them over whichever way is easier for you:</p>
           <div className="import-choose">
             <button type="button" className="import-drop" disabled={busy !== null} onClick={() => zipInput.current?.click()}>
-              <FileArchive /><strong>Choose a zip file</strong><small>One zip holding the Excel file and the photos folder</small>
+              <em>Option A</em><FileArchive /><strong>I have one zip file</strong><small>Someone sent you everything zipped into a single file</small>
             </button>
+            <span className="import-or" aria-hidden="true">or</span>
             <button type="button" className="import-drop" disabled={busy !== null} onClick={() => folderInput.current?.click()}>
-              <FolderOpen /><strong>Choose a folder</strong><small>The folder itself, without zipping it. Best for very large photo sets</small>
+              <em>Option B</em><FolderOpen /><strong>I have a folder</strong><small>The files sit in a folder on this computer. No need to zip it. Best for hundreds of photos</small>
             </button>
             <input ref={zipInput} hidden type="file" accept=".zip,application/zip" onChange={(event) => { const file = event.target.files?.[0]; if (file) void load(filesFromZip(file)) }} />
             <input ref={folderInput} hidden type="file" multiple {...({ webkitdirectory: '' } as Record<string, string>)} onChange={(event) => { if (event.target.files?.length) void load(filesFromFolder(event.target.files)) }} />
@@ -188,7 +190,7 @@ export function ImportPage() {
               <li>One Excel row per size and colour. Rows with the same product name become one product.</li>
               <li>Categories are created if they do not exist yet. Web addresses and SKUs are created for you.</li>
               <li>Photo folders are named after the product; a sub-folder is named after the colour. Number the files in the order they should show.</li>
-              <li>Running the same files again is safe: nothing is duplicated, and stock on existing variants is not changed.</li>
+              <li>Importing the same products twice is safe, whether by zip, by folder, or one after the other. Products, sizes and photos that are already in the store are recognised and skipped, and stock is never changed.</li>
             </ul>
           </div>
         </section>
