@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileArchive, FolderOpen, Loader2, RefreshCw, Upload } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileArchive, FileSpreadsheet, Folder, FolderOpen, Image as ImageIcon, Loader2, RefreshCw, ShieldCheck, Upload } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { apiRequest } from '../lib/api'
@@ -156,46 +156,85 @@ export function ImportPage() {
         <div>
           <p>CATALOGUE CONTROL</p>
           <h1>IMPORT PRODUCTS</h1>
-          <span>Load many products at once from one Excel file and a folder of photos. Nothing is saved until you press Import.</span>
+          <span>Add many products at once: one Excel file plus a folder of photos, in three steps.</span>
         </div>
-        <a className="admin-secondary" href="/templates/rogueon-products-template.xlsx" download><Download />Excel template</a>
+        {(parsed || result) && <a className="admin-secondary" href="/templates/rogueon-products-template.xlsx" download><Download />Excel template</a>}
       </header>
 
       {!parsed && !result && (
-        <section className="admin-panel import-start">
-          <header><h2>1 · Choose your files</h2><span>Pick one way. Both do exactly the same thing.</span></header>
-          <p className="import-lead">Your files are the Excel sheet plus a <b>photos</b> folder. Hand them over whichever way is easier for you:</p>
-          <div className="import-choose">
-            <button type="button" className="import-drop" disabled={busy !== null} onClick={() => zipInput.current?.click()}>
-              <em>Option A</em><FileArchive /><strong>I have one zip file</strong><small>Someone sent you everything zipped into a single file</small>
-            </button>
-            <span className="import-or" aria-hidden="true">or</span>
-            <button type="button" className="import-drop" disabled={busy !== null} onClick={() => folderInput.current?.click()}>
-              <em>Option B</em><FolderOpen /><strong>I have a folder</strong><small>The files sit in a folder on this computer. No need to zip it. Best for hundreds of photos</small>
-            </button>
-            <input ref={zipInput} hidden type="file" accept=".zip,application/zip" onChange={(event) => { const file = event.target.files?.[0]; if (file) void load(filesFromZip(file)) }} />
-            <input ref={folderInput} hidden type="file" multiple {...({ webkitdirectory: '' } as Record<string, string>)} onChange={(event) => { if (event.target.files?.length) void load(filesFromFolder(event.target.files)) }} />
-          </div>
-          {busy === 'reading' && <p className="import-status"><Loader2 className="spin" />Reading the files…</p>}
-          <div className="import-howto">
-            <div>
-              <h3>What goes in</h3>
-              <pre>{`rogueon-drop/
-  products.xlsx
-  photos/
-    Project Requiem Zipup/
-      1.png  2.png          general photos
-      Grey/1.png  2.png     photos of the grey one
-      Black/1.png  2.png`}</pre>
-            </div>
-            <ul>
-              <li>One Excel row per size and colour. Rows with the same product name become one product.</li>
-              <li>Categories are created if they do not exist yet. Web addresses and SKUs are created for you.</li>
-              <li>Photo folders are named after the product; a sub-folder is named after the colour. Number the files in the order they should show.</li>
-              <li><b>Photos must be PNG.</b> JPEG and other formats are refused; save or export them as PNG first.</li>
-              <li>Importing the same products twice is safe, whether by zip, by folder, or one after the other. Products, sizes and photos that are already in the store are recognised and skipped, and stock is never changed.</li>
-            </ul>
-          </div>
+        <section className="import-guide">
+          <ol className="guide-steps">
+            <li className="guide-step">
+              <span className="guide-num">1</span>
+              <div className="guide-body">
+                <div className="guide-text">
+                  <h2>Fill in the Excel template</h2>
+                  <p>Download the template and write <b>one row for every size of every colour</b>. Rows with the same product name become one product.</p>
+                  <a className="admin-primary" href="/templates/rogueon-products-template.xlsx" download><Download />Download Excel template</a>
+                  <small>Dark columns must be filled. Categories, web addresses and SKUs are created for you.</small>
+                </div>
+                <figure className="guide-visual">
+                  <div className="sheet-mock" role="img" aria-label="Example: three rows in the Excel file make one product with two colours">
+                    <div className="sheet-head"><span>Category</span><span>Product name</span><span>Colour</span><span>Size</span><span>Price</span><span>Stock</span></div>
+                    {[['Grey', 'M', '28'], ['Grey', 'L', '12'], ['Black', 'M', '20']].map(([colour, size, stock]) => (
+                      <div className="sheet-row" key={colour + size}><span>Hoodie</span><span className="hl">Project Requiem Zipup</span><span className="hl">{colour}</span><span>{size}</span><span>4500</span><span>{stock}</span></div>
+                    ))}
+                  </div>
+                  <figcaption><b>3 rows</b> → 1 product · 2 colours · 3 sizes</figcaption>
+                </figure>
+              </div>
+            </li>
+
+            <li className="guide-step">
+              <span className="guide-num">2</span>
+              <div className="guide-body">
+                <div className="guide-text">
+                  <h2>Put the photos in folders</h2>
+                  <ul className="guide-rules">
+                    <li><Folder /><span>Make a folder called <b>photos</b> next to the Excel file.</span></li>
+                    <li><Folder /><span>Inside it, one folder per product, named <b>exactly like the Product name</b> in Excel.</span></li>
+                    <li><Folder /><span>Inside that, one folder per <b>colour</b>. Photos left outside a colour folder show for every colour.</span></li>
+                    <li><ImageIcon /><span>Name the photos <b>1.png, 2.png, 3.png…</b> in the order they should appear. <b>PNG only.</b></span></li>
+                  </ul>
+                </div>
+                <figure className="guide-visual">
+                  <div className="tree-mock" role="img" aria-label="Example folder layout">
+                    <div className="t0"><Folder className="dir" />My import</div>
+                    <div className="t1"><FileSpreadsheet className="xls" />products.xlsx<em>the filled template</em></div>
+                    <div className="t1"><Folder className="dir" />photos</div>
+                    <div className="t2"><Folder className="dir" />Project Requiem Zipup<em>= Product name</em></div>
+                    <div className="t3 files"><span><ImageIcon />1.png</span><span><ImageIcon />2.png</span><em>all colours</em></div>
+                    <div className="t3"><Folder className="dir" />Grey<em>= Colour</em></div>
+                    <div className="t4 files"><span><ImageIcon />1.png</span><span><ImageIcon />2.png</span></div>
+                    <div className="t3"><Folder className="dir" />Black</div>
+                    <div className="t4 files"><span><ImageIcon />1.png</span><span><ImageIcon />2.png</span></div>
+                  </div>
+                </figure>
+              </div>
+            </li>
+
+            <li className="guide-step">
+              <span className="guide-num">3</span>
+              <div className="guide-body single">
+                <div className="guide-text">
+                  <h2>Upload it here</h2>
+                  <p>Select the whole <b>My import</b> folder. Nothing is saved yet: you will see a check of everything first.</p>
+                </div>
+                <div className="guide-upload">
+                  <button type="button" className="upload-card main" disabled={busy !== null} onClick={() => folderInput.current?.click()}>
+                    <FolderOpen /><span><strong>Choose folder</strong><small>Select the folder with the Excel file and the photos folder</small></span><em>Recommended</em>
+                  </button>
+                  <button type="button" className="upload-card" disabled={busy !== null} onClick={() => zipInput.current?.click()}>
+                    <FileArchive /><span><strong>Choose zip file</strong><small>Only if everything was sent to you as one .zip</small></span>
+                  </button>
+                  <input ref={zipInput} hidden type="file" accept=".zip,application/zip" onChange={(event) => { const file = event.target.files?.[0]; if (file) void load(filesFromZip(file)) }} />
+                  <input ref={folderInput} hidden type="file" multiple {...({ webkitdirectory: '' } as Record<string, string>)} onChange={(event) => { if (event.target.files?.length) void load(filesFromFolder(event.target.files)) }} />
+                </div>
+                {busy === 'reading' && <p className="import-status"><Loader2 className="spin" />Reading the files…</p>}
+                <p className="guide-safe"><ShieldCheck />Importing the same files again is safe. Products, sizes and photos already in the store are skipped, and stock is never changed.</p>
+              </div>
+            </li>
+          </ol>
         </section>
       )}
 
@@ -204,7 +243,7 @@ export function ImportPage() {
       {parsed && !result && (
         <section className="admin-panel">
           <header>
-            <h2>2 · Check</h2>
+            <h2>4 · Check before importing</h2>
             <span>{parsed.sheetName} · {rows.length} rows · {parsed.photos.length} photos found</span>
           </header>
           {busy === 'checking' && <p className="import-status"><Loader2 className="spin" />Checking…</p>}
@@ -256,7 +295,7 @@ export function ImportPage() {
           )}
           <footer className="import-actions">
             <button type="button" className="admin-table-action" disabled={busy !== null} onClick={reset}><RefreshCw />Choose different files</button>
-            <button type="button" className="admin-primary" disabled={!ready || busy !== null} onClick={() => void runImport()}><Upload />{busy === 'importing' ? 'Importing…' : '3 · Import'}</button>
+            <button type="button" className="admin-primary" disabled={!ready || busy !== null} onClick={() => void runImport()}><Upload />{busy === 'importing' ? 'Importing…' : 'Import now'}</button>
           </footer>
           {progress && (
             <div className="import-progress" role="status">
